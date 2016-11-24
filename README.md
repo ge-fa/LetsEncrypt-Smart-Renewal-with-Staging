@@ -33,7 +33,7 @@ acme    ALL=NOPASSWD: /usr/sbin/service dovecot reload
 33  3   *   *   *    /home/acme/scripts/renew.sh >> /var/log/acme_tiny.log
 ```
 10. By default, the working files are named like follows:
-	- `account.key` is the Let's Encrypt account key you provided
+	- `account.key` is the Let's Encrypt account key you provided, put it in the same folder like the script
 	- `example.com.csr` is the CSR using RSA for "example.com" you provided
 	- `example.com-ecdsa.csr` is the CSR using ECDSA for "example.com" you provided
 	- `staging-example.com.crt` is the staging certificate using RSA for "example.com"
