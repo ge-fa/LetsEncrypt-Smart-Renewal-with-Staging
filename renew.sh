@@ -47,6 +47,7 @@ for DOMAIN in "${DOMAINS[@]}"; do
 	if $RSA; then
 		if $FIRSTRUN || ! openssl x509 -checkend $[ 86400 * $RENEWSTAGING ] -noout -in $CERTS/staging-$DOMAIN.crt; then
 			# Staging certificate expires soon, getting a new one
+			date -Iseconds | tr -d '\n' && echo " Staging certificate (RSA) for $DOMAIN expires soon, getting a new one."
 			python $SCRIPTS/acme_tiny.py --account-key $SCRIPTS/account.key \
 				--csr $CSRS/$DOMAIN.csr --acme-dir $CHALLENGESDIR \
 				> $CERTS/staging-$DOMAIN.crt || exit 1
@@ -54,6 +55,7 @@ for DOMAIN in "${DOMAINS[@]}"; do
 		if $FIRSTRUN || ! openssl x509 -checkend $[ 86400 * $RENEWPRODUCTION ] -noout -in $CERTS/$DOMAIN.crt; then
 			# Production certificate expires very soon,
 			# replacing production certificate with staging certificate:
+			date -Iseconds | tr -d '\n' && echo " Production certificate (RSA) for $DOMAIN expires very soon, replacing production certificate with staging certificate."
 			cp $CERTS/staging-$DOMAIN.crt $CERTS/$DOMAIN.crt
 			# Production certificate changed, reload necessary:
 			RELOAD=true
@@ -63,6 +65,7 @@ for DOMAIN in "${DOMAINS[@]}"; do
 	if $ECDSA; then
 		if $FIRSTRUN || ! openssl x509 -checkend $[ 86400 * $RENEWSTAGING ] -noout -in $CERTS/staging-$DOMAIN-ecdsa.crt; then
 			# Staging certificate expires soon, getting a new one
+			date -Iseconds | tr -d '\n' && echo " Staging certificate (ECDSA) for $DOMAIN expires soon, getting a new one."
 			python $SCRIPTS/acme_tiny.py --account-key $SCRIPTS/account.key \
 				--csr $CSRS/$DOMAIN-ecdsa.csr --acme-dir $CHALLENGESDIR \
 				> $CERTS/staging-$DOMAIN-ecdsa.crt || exit 1
@@ -70,6 +73,7 @@ for DOMAIN in "${DOMAINS[@]}"; do
 		if $FIRSTRUN || ! openssl x509 -checkend $[ 86400 * $RENEWPRODUCTION ] -noout -in $CERTS/$DOMAIN-ecdsa.crt; then
 			# Production certificate expires very soon,
 			# replacing production certificate with staging certificate:
+			date -Iseconds | tr -d '\n' && echo " Production certificate (ECDSA) for $DOMAIN expires very soon, replacing production certificate with staging certificate."
 			cp $CERTS/staging-$DOMAIN-ecdsa.crt $CERTS/$DOMAIN-ecdsa.crt
 			# Production certificate changed, reload necessary:
 			RELOAD=true
@@ -80,17 +84,17 @@ done
 # If reload is necessary, replace PEM style certificates with new staging
 # certificates and reload services
 if $RELOAD; then
-	# Print date for logging purposes
-	date
-	echo "Some certificates were about to expire. Reloading services..."
 	# Make new PEM style certificates (certificate + intermediate) if requested
+	date -Iseconds | tr -d '\n' && echo -n " Creating new PEM style certificates.. "
 	if $INTERMEDIATE; then
 		for DOMAIN in "${DOMAINS[@]}"; do
 			cat $CERTS/$DOMAIN.crt $CERTS/intermediate-$DOMAIN.pem > $CERTS/$DOMAIN.pem
 			cat $CERTS/$DOMAIN-ecdsa.crt $CERTS/intermediate-$DOMAIN.pem > $CERTS/$DOMAIN-ecdsa.pem
 		done
 	fi
+	echo "done."
 	# Reload services
+	date -Iseconds | tr -d '\n' && echo " Reloading services..."
 	sudo service apache2 reload
 	sudo service postfix reload
 	sudo service dovecot reload
