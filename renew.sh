@@ -37,41 +37,44 @@ RENEWPRODUCTION=3
 # RELOAD set to true if production certificates get changed
 RELOAD=false
 
+# Do you want RSA certificates? If so, set to true:
+RSA=true
+# Do you want ECDSA certificates? If so, set to true:
+ECDSA=true
+
 # Check each domain for renewal
 for DOMAIN in "${DOMAINS[@]}"; do
-	# First check RSA certificates. Comment this section out, if you don't need it
-	# RSA:
-	if $FIRSTRUN || ! openssl x509 -checkend $[ 86400 * $RENEWSTAGING ] -noout -in $CERTS/staging-$DOMAIN.crt; then
-		# Staging certificate expires soon, getting a new one
-		python $SCRIPTS/acme_tiny.py --account-key $SCRIPTS/account.key \
-			--csr $CSRS/$DOMAIN.csr --acme-dir $CHALLENGESDIR \
-			> $CERTS/staging-$DOMAIN.crt || exit 1
+	if $RSA; then
+		if $FIRSTRUN || ! openssl x509 -checkend $[ 86400 * $RENEWSTAGING ] -noout -in $CERTS/staging-$DOMAIN.crt; then
+			# Staging certificate expires soon, getting a new one
+			python $SCRIPTS/acme_tiny.py --account-key $SCRIPTS/account.key \
+				--csr $CSRS/$DOMAIN.csr --acme-dir $CHALLENGESDIR \
+				> $CERTS/staging-$DOMAIN.crt || exit 1
+		fi
+		if $FIRSTRUN || ! openssl x509 -checkend $[ 86400 * $RENEWPRODUCTION ] -noout -in $CERTS/$DOMAIN.crt; then
+			# Production certificate expires very soon,
+			# replacing production certificate with staging certificate:
+			cp $CERTS/staging-$DOMAIN.crt $CERTS/$DOMAIN.crt
+			# Production certificate changed, reload necessary:
+			RELOAD=true
+		fi
 	fi
-	if $FIRSTRUN || ! openssl x509 -checkend $[ 86400 * $RENEWPRODUCTION ] -noout -in $CERTS/$DOMAIN.crt; then
-		# Production certificate expires very soon,
-		# replacing production certificate with staging certificate:
-		cp $CERTS/staging-$DOMAIN.crt $CERTS/$DOMAIN.crt
-		# Production certificate changed, reload necessary:
-		RELOAD=true
-	fi
-	# END of RSA part
 
-	# Same for ECDSA certificates. Comment this section out, if you don't need it
-	# ECDSA:
-	if $FIRSTRUN || ! openssl x509 -checkend $[ 86400 * $RENEWSTAGING ] -noout -in $CERTS/staging-$DOMAIN-ecdsa.crt; then
-		# Staging certificate expires soon, getting a new one
-		python $SCRIPTS/acme_tiny.py --account-key $SCRIPTS/account.key \
-			--csr $CSRS/$DOMAIN-ecdsa.csr --acme-dir $CHALLENGESDIR \
-			> $CERTS/staging-$DOMAIN-ecdsa.crt || exit 1
+	if $ECDSA; then
+		if $FIRSTRUN || ! openssl x509 -checkend $[ 86400 * $RENEWSTAGING ] -noout -in $CERTS/staging-$DOMAIN-ecdsa.crt; then
+			# Staging certificate expires soon, getting a new one
+			python $SCRIPTS/acme_tiny.py --account-key $SCRIPTS/account.key \
+				--csr $CSRS/$DOMAIN-ecdsa.csr --acme-dir $CHALLENGESDIR \
+				> $CERTS/staging-$DOMAIN-ecdsa.crt || exit 1
+		fi
+		if $FIRSTRUN || ! openssl x509 -checkend $[ 86400 * $RENEWPRODUCTION ] -noout -in $CERTS/$DOMAIN-ecdsa.crt; then
+			# Production certificate expires very soon,
+			# replacing production certificate with staging certificate:
+			cp $CERTS/staging-$DOMAIN-ecdsa.crt $CERTS/$DOMAIN-ecdsa.crt
+			# Production certificate changed, reload necessary:
+			RELOAD=true
+		fi
 	fi
-	if $FIRSTRUN || ! openssl x509 -checkend $[ 86400 * $RENEWPRODUCTION ] -noout -in $CERTS/$DOMAIN-ecdsa.crt; then
-		# Production certificate expires very soon,
-		# replacing production certificate with staging certificate:
-		cp $CERTS/staging-$DOMAIN-ecdsa.crt $CERTS/$DOMAIN-ecdsa.crt
-		# Production certificate changed, reload necessary:
-		RELOAD=true
-	fi
-	# END of ECDSA part
 done
 
 # If reload is necessary, replace PEM style certificates with new staging
