@@ -12,7 +12,7 @@ Keep in mind, however, that the first number alone would only account for negati
 In order for this script to work you need to meet the following criteria:
 
 1. A folder structure like mentioned in the script, otherwise change it appropriately in the environment variables at the beginning of the script to match your needs. Since I am using a custom user for my ACME business, I set these folders up in its home directory. By default you need to have the following folders.
-	- `scripts/` contains the `acme-tiny.py` script as well as this script itself
+	- `scripts/` contains the `acme-tiny.py` script, the `account.key` as well as this script itself
 	- `csr/` contains the CSRs for your certificates
 	- `certs/` contains the signed certificates for staging and production
 	- `/var/www/acme-challenges` this is the default folder where `acme-tiny.py` will put the challenges for Let's Encrypt to verify the domain (see 4. for details)
@@ -34,7 +34,7 @@ In order for this script to work you need to meet the following criteria:
         33  3   *   *   *    /home/acme/scripts/renew.sh >> /var/log/acme_tiny.log
 
 11. By default, the working files are named like follows:
-	- `account.key` is the Let's Encrypt account key you provided, put it in the same folder like the script
+	- `account.key` is the Let's Encrypt account key you provided
 	- `example.com.csr` is the CSR using RSA for "example.com" you provided
 	- `example.com-ecdsa.csr` is the CSR using ECDSA for "example.com" you provided
 	- `staging-example.com.crt` is the staging certificate using RSA for "example.com"

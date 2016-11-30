@@ -15,6 +15,7 @@ fi
 # Paths of certificates, scripts, CSRs and ACME-challenges:
 CERTS="/home/acme/certs"
 SCRIPTS="/home/acme/scripts"
+ACCOUNTKEY="$SCRIPTS/account.key"
 CSRS="/home/acme/csr"
 CHALLENGESDIR="/var/www/acme-challenges"
 
@@ -42,13 +43,61 @@ RSA=true
 # Do you want ECDSA certificates? If so, set to true:
 ECDSA=true
 
+# Check if all necessary directories are readable
+if [ ! -r "$CSRS" ]; then
+	date -Iseconds | tr -d '\n'
+	echo " CSR directory ($CSRS) is not readable! Exiting..."
+	exit 1
+fi
+if [ ! -r "$SCRIPTS" ]; then
+	date -Iseconds | tr -d '\n'
+	echo " Script directory ($SCRIPTS) is not readable! Exiting..."
+	exit 1
+fi
+if [ ! -r "$CERTS" ]; then
+	date -Iseconds | tr -d '\n'
+	echo " Certificate directory ($SCRIPTS) is not readable! Exiting..."
+	exit 1
+fi
+
+# Check if all necessary directories are writable
+if [ ! -w "$CHALLENGESDIR" ]; then
+	date -Iseconds | tr -d '\n'
+	echo " Web directory for ACME challenges ($CHALLENGESDIR) is not writable! Exiting..."
+	exit 1
+fi
+if [ ! -w "$CERTS" ]; then
+	date -Iseconds | tr -d '\n'
+	echo " Certificate directory 'certs' ($CERTS) is not writable! Exiting..."
+	exit 1
+fi
+
+# Check if all necessary files exist and are readable or executable
+if [ ! -r "$ACCOUNTKEY" ]; then
+	date -Iseconds | tr -d '\n'
+	echo " Let's Encrypt ACME 'account.key' does not exist in 'scripts' directory ($SCRIPTS)! Exiting..."
+	exit 1
+fi
+if [ ! -x "$SCRIPTS/acme_tiny.py" ]; then
+	date -Iseconds | tr -d '\n'
+	echo " 'acme_tiny.py' script does not exist in 'scripts' directory ($SCRIPTS)! Exiting..."
+	exit 1
+fi
+for DOMAIN in "${DOMAINS[@]}"; do
+	if [ ! -r "$CSRS/$DOMAIN.csr" ]; then
+		date -Iseconds | tr -d '\n'
+		echo " CSR for $DOMAIN does not exist in CSR directory ($CSRS)! Exiting..."
+		exit 1
+	fi
+done
+
 # Check each domain for renewal
 for DOMAIN in "${DOMAINS[@]}"; do
 	if $RSA; then
 		if $FIRSTRUN || ! openssl x509 -checkend $[ 86400 * $RENEWSTAGING ] -noout -in $CERTS/staging-$DOMAIN.crt; then
 			# Staging certificate expires soon, getting a new one
 			date -Iseconds | tr -d '\n' && echo " Staging certificate (RSA) for $DOMAIN expires soon, getting a new one."
-			python $SCRIPTS/acme_tiny.py --account-key $SCRIPTS/account.key \
+			python $SCRIPTS/acme_tiny.py --account-key $ACCOUNTKEY \
 				--csr $CSRS/$DOMAIN.csr --acme-dir $CHALLENGESDIR \
 				> $CERTS/staging-$DOMAIN.crt || exit 1
 		fi
@@ -66,7 +115,7 @@ for DOMAIN in "${DOMAINS[@]}"; do
 		if $FIRSTRUN || ! openssl x509 -checkend $[ 86400 * $RENEWSTAGING ] -noout -in $CERTS/staging-$DOMAIN-ecdsa.crt; then
 			# Staging certificate expires soon, getting a new one
 			date -Iseconds | tr -d '\n' && echo " Staging certificate (ECDSA) for $DOMAIN expires soon, getting a new one."
-			python $SCRIPTS/acme_tiny.py --account-key $SCRIPTS/account.key \
+			python $SCRIPTS/acme_tiny.py --account-key $ACCOUNTKEY \
 				--csr $CSRS/$DOMAIN-ecdsa.csr --acme-dir $CHALLENGESDIR \
 				> $CERTS/staging-$DOMAIN-ecdsa.crt || exit 1
 		fi
