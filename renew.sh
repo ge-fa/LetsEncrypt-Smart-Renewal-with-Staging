@@ -1,17 +1,5 @@
 #!/bin/bash
 
-# Check if the user set the firstrun flag:
-if [ "$1" = "firstrun" ]; then
-	read -p "Firstrun/Forcerun requested. Do you want that? (y/n) " choice
-	case "$choice" in
-		y|Y ) FIRSTRUN=true;;
-		n|N ) FIRSTRUN=false;;
-		* ) echo "Invalid option! Exiting..."; exit 1;;
-	esac
-else
-	FIRSTRUN=false
-fi
-
 # Paths of certificates, scripts, CSRs and ACME-challenges:
 CERTS="/home/acme/certs"
 SCRIPTS="/home/acme/scripts"
@@ -35,13 +23,30 @@ declare -a DOMAINS=("www.example.com" "www2.example.com");
 RENEWSTAGING=7
 # Swap the production certificate for staging one 3 days before expiration:
 RENEWPRODUCTION=3
-# RELOAD set to true if production certificates get changed
-RELOAD=false
 
 # Do you want RSA certificates? If so, set to true:
 RSA=true
 # Do you want ECDSA certificates? If so, set to true:
 ECDSA=true
+
+#################################################
+###### No configuration past here necessary #####
+#################################################
+
+# Check if the user set the firstrun flag:
+if [ "$1" = "firstrun" ]; then
+	read -p "Firstrun/Forcerun requested. Do you want that? (y/n) " choice
+	case "$choice" in
+		y|Y ) FIRSTRUN=true;;
+		n|N ) FIRSTRUN=false;;
+		* ) echo "Invalid option! Exiting..."; exit 1;;
+	esac
+else
+	FIRSTRUN=false
+fi
+
+# RELOAD is set to true by script if production certificates get changed
+RELOAD=false
 
 # Check if all necessary directories are readable
 if [ ! -r "$CSRS" ]; then
